@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "KAUSHALYA Workforce Intelligence"
+description = "A workforce intelligence platform for government teams, trainees, employers, and training institutes to connect skills, programs, employment outcomes, district demand, and future workforce decisions."
+version = "1.0.0"
+id = "artifacts/kaushalya"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25561
+
+[services.development]
+run = "pnpm --filter @workspace/kaushalya run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/kaushalya", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/kaushalya/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25561"
+BASE_PATH = "/"
