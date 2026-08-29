@@ -246,17 +246,10 @@ async def career_advice_compat(
     request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """Exact path the frontend's generated hook calls."""
-    from app.routes.ai import career_advice
-    from app.schemas.ai import CareerAdviceRequest
+    """Exact path the frontend's generated hook calls — now backed by Gemini."""
+    from app.routes.ai_routes import LegacyCareerRequest, legacy_career_advice
     body_data = await request.json()
     trainee_id = body_data.get("traineeId", body_data.get("trainee_id", ""))
     question = body_data.get("question", "")
-    body = CareerAdviceRequest(trainee_id=trainee_id, question=question)
-    result = await career_advice(body, db)
-    # Map to the exact shape the frontend OpenAPI hook expects
-    return {
-        "answer": result.get("answer", ""),
-        "sources": result.get("sources", []),
-        "nextSteps": result.get("nextSteps", []),
-    }
+    body = LegacyCareerRequest(traineeId=trainee_id, question=question)
+    return await legacy_career_advice(body, db)

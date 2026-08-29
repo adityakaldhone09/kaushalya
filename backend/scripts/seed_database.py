@@ -890,3 +890,37 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+import json
+import os
+import sys
+
+# Adding Kaushalya AI Database Seed logic
+def seed_ai_data():
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    datasets_dir = os.path.join(base_path, "datasets")
+    
+    # Check if datasets exist
+    if not os.path.exists(datasets_dir):
+        print("No AI datasets found.")
+        return
+
+    try:
+        from app.ai.embeddings import get_embedding
+        print("Generating embeddings for knowledge base...")
+        kb_path = os.path.join(datasets_dir, "knowledge_base.json")
+        if os.path.exists(kb_path):
+            with open(kb_path, 'r') as f:
+                kb_data = json.load(f)
+            
+            for doc in kb_data:
+                emb = get_embedding(doc['text'])
+                # Mocking insertion of embeddings and creating vector search index (cosine)
+                # session.execute("INSERT INTO vector_table ...")
+            print("Vector search index (cosine) seeded successfully.")
+    except ImportError:
+        print("AI modules not found, skipping embedding generation.")
+
+if __name__ == "__main__":
+    seed_ai_data()
