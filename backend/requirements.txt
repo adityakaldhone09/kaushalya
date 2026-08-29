@@ -17,3 +17,4 @@ scikit-learn>=1.4.0
 httpx==0.28.1
 slowapi==0.1.9
 eval_type_backport>=0.2.0
+google-genai>=1.0.0

@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
 
+    # Gemini
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+
+    # AI limits
+    AI_MAX_MESSAGE_LENGTH: int = 4000
+    AI_MAX_CONTEXT_DOCUMENTS: int = 8
+
     @property
     def is_development(self) -> bool:
         return self.ENVIRONMENT == "development"
