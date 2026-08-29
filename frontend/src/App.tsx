@@ -9,6 +9,7 @@ import { AdminDashboardPage, DistrictsPage, PredictionsPage, ProgramImpactPage, 
 import { TraineeDashboardPage, TraineeGapPage, TraineeJobsPage, TraineeProfilePage, TraineeRecommendationsPage, TraineeSkillsPage, TraineeTrainingPage } from '@/pages/trainee';
 import { AuthPage, EmployerDashboardPage, EmployerJobsPage, InstituteDashboardPage, InstituteProgramsPage } from '@/pages/roles';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { AIChatWidget } from '@/components/AIChatWidget';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,6 +65,7 @@ function App() {
             <Router />
           </WouterRouter>
           <Toaster />
+          <AIChatWidget />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

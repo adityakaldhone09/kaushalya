@@ -8,7 +8,7 @@ import { getToken } from '@/lib/auth';
 
 const BASE = '/api';
 
-async function request<T>(
+export async function request<T>(
   method: string,
   path: string,
   body?: unknown,
@@ -99,25 +99,6 @@ export const intelligenceApi = {
   programImpactDetail: (id: string) => request('GET', `/intelligence/program-impact/${id}`),
 };
 
-// ── AI API ────────────────────────────────────────────────────────────────────
-
-export const aiApi = {
-  chat: (message: string, conversation_id?: string) =>
-    request<{ message: string; conversation_id: string; is_ai_generated: boolean }>(
-      'POST', '/ai/chat', { message, conversation_id }
-    ),
-
-  explainSkillGap: (trainee_id: string, target_role: string) =>
-    request('POST', '/ai/explain-skill-gap', { trainee_id, target_role }),
-
-  districtInsight: (district: string) =>
-    request('POST', '/ai/district-insight', { district }),
-
-  programInsight: (program_id: string) =>
-    request('POST', '/ai/program-insight', { program_id }),
-
-  conversations: () => request('GET', '/ai/conversations'),
-};
 
 // ── Employment API ────────────────────────────────────────────────────────────
 

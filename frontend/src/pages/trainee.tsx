@@ -5,6 +5,7 @@ import { Link } from 'wouter';
 import { getGetJobMatchesQueryKey, getGetTraineeQueryKey, useApplyToJob, useGetCareerAdvice, useGetJobMatches, useGetTrainee, useGetTraineeDashboard, useGetTraineeRecommendations, useListSkills, useListTrainingPrograms, useUpdateTrainee } from '@workspace/api-client-react';
 import { AppShell, EmptyState, ErrorState, KpiCard, LoadingState, PageHeader, ProgressBar, Surface, cx } from '@/components/kaushalya-ui';
 import { useAuth } from '@/contexts/AuthContext';
+import { CareerRecommendationCard } from '@/components/AIInsightCards';
 
 function useTraineeId(): string {
   const { user } = useAuth();
@@ -19,7 +20,8 @@ function useTraineeData() {
 }
 
 export function TraineeDashboardPage() {
-  const query = useTraineeData();
+  const traineeId = useTraineeId();
+  const query = useGetTraineeDashboard(traineeId);
   const data = query.data;
   if (query.isLoading) return <TraineeFrame><PageHeader eyebrow="My workspace" title="Your next move starts here." /><LoadingState label="Loading your journey" /></TraineeFrame>;
   if (query.isError || !data) return <TraineeFrame><PageHeader eyebrow="My workspace" title="Your next move starts here." /><ErrorState onRetry={() => query.refetch()} /></TraineeFrame>;
@@ -31,6 +33,9 @@ export function TraineeDashboardPage() {
       <KpiCard label="Skills in profile" value={`${data.totalSkills}`} change={`${data.verifiedSkills} verified`} detail="Keep your evidence current" index={1} />
       <KpiCard label="Skill gap score" value={`${data.skillGapScore}`} detail="Lower is closer to your target" trend="down" index={2} />
       <KpiCard label="Job matches" value={`${data.recommendedJobs}`} detail="Ranked to your profile" index={3} />
+    </div>
+    <div className="mt-5">
+      <CareerRecommendationCard traineeId={traineeId} />
     </div>
     <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
       <Surface title="Your journey" meta="Profile to placement">
