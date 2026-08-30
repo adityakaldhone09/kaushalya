@@ -34,13 +34,38 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
 
-    # Gemini
+    # Gemini — use gemini-flash-lite-latest (fast, clean output, no thinking blocks)
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-flash-lite-latest"
+
+    # Groq (secondary LLM) — env var can be GROQ_API_KEY or Groq_API_KEY
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "qwen/qwen3.6-27b"
 
     # AI limits
     AI_MAX_MESSAGE_LENGTH: int = 4000
     AI_MAX_CONTEXT_DOCUMENTS: int = 8
+
+    # SMTP Settings
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_FROM_NAME: str = "KAUSHALYA"
+    SMTP_USE_TLS: bool = True
+    EMAIL_TOKEN_EXPIRE_MINUTES: int = 30
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 15
+
+    # Google Identity Services. Only GOOGLE_CLIENT_ID belongs in the frontend.
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = ""
+
+    @property
+    def smtp_configured(self) -> bool:
+        return bool(self.SMTP_HOST and self.SMTP_FROM_EMAIL)
+
 
     @property
     def is_development(self) -> bool:
