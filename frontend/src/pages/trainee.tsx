@@ -35,7 +35,7 @@ export function TraineeDashboardPage() {
       <KpiCard label="Job matches" value={`${data.recommendedJobs}`} detail="Ranked to your profile" index={3} />
     </div>
     <div className="mt-5">
-      <CareerRecommendationCard traineeId={traineeId} />
+      <CareerRecommendationCard />
     </div>
     <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
       <Surface title="Your journey" meta="Profile to placement">

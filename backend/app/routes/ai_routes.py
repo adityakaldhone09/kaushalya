@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from app.auth.dependencies import get_current_user
 from app.database.connection import get_db
-from app.ai.gemini_client import is_available, get_model_name
+from app.ai.gemini_client import is_available, get_model_name, llm_status
 from app.ai.chatbot import process_chat
 from app.ai.career_advisor import get_career_advice
 from app.ai.skill_gap_advisor import explain_skill_gap
@@ -47,10 +47,10 @@ class ProgramInsightRequest(BaseModel):
 @router.get("/health")
 async def ai_health(db: AsyncIOMotorDatabase = Depends(get_db)):
     from app.database.connection import check_db_health
-    from app.ai.embeddings import embeddings_available
+    from app.ai.gemini_client import llm_status, embeddings_available
 
     db_ok = await check_db_health()
-    gemini_ok = is_available()
+    status = llm_status()
     emb_ok = embeddings_available()
 
     kb_count = 0
@@ -60,12 +60,14 @@ async def ai_health(db: AsyncIOMotorDatabase = Depends(get_db)):
         pass
 
     return {
-        "gemini": "connected" if gemini_ok else "unavailable",
-        "model": get_model_name() if gemini_ok else "none",
+        "gemini": status["gemini"],
+        "groq": status["groq"],
+        "active_llm": status["active"],
+        "model": status["model"],
         "mongodb": "connected" if db_ok else "disconnected",
         "embeddings": "available" if emb_ok else "unavailable",
         "knowledge_base_docs": kb_count,
-        "fallback_mode": not gemini_ok,
+        "fallback_mode": status["fallback_mode"],
     }
 
 
