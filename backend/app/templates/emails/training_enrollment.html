@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block content %}<h2>Enrollment confirmed</h2><p>Hello {{ name }}, your training enrollment is confirmed.</p>{% for key, value in details.items() %}<p><strong>{{ key }}:</strong> {{ value }}</p>{% endfor %}{% endblock %}

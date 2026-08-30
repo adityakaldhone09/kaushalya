@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block content %}<h2>Congratulations!</h2><p>Hello {{ name }}, you have been selected. Your next steps are below.</p>{% for key, value in details.items() %}<p><strong>{{ key }}:</strong> {{ value }}</p>{% endfor %}{% endblock %}

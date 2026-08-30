@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block content %}<h2>Training completed</h2><p>Congratulations, {{ name }}. You have successfully completed your training.</p>{% for key, value in details.items() %}<p><strong>{{ key }}:</strong> {{ value }}</p>{% endfor %}{% endblock %}

@@ -141,6 +141,15 @@ async def create_indexes(db: AsyncIOMotorDatabase) -> None:
             IndexModel([("created_at", DESCENDING)], name="conversations_created_at"),
         ])
 
+        # email delivery audit trail
+        await db.email_logs.create_indexes([
+            IndexModel([("recipient", ASCENDING)], name="email_logs_recipient"),
+            IndexModel([("user_id", ASCENDING)], name="email_logs_user_id"),
+            IndexModel([("email_type", ASCENDING)], name="email_logs_type"),
+            IndexModel([("status", ASCENDING)], name="email_logs_status"),
+            IndexModel([("sent_at", DESCENDING)], name="email_logs_sent_at"),
+        ])
+
         logger.info("Database indexes created successfully")
 
     except Exception as exc:
