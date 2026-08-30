@@ -51,6 +51,11 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface GoogleLoginPayload {
+  credential: string;
+  role?: 'TRAINEE' | 'EMPLOYER' | 'TRAINING_INSTITUTE';
+}
+
 export interface AuthResponse {
   access_token: string;
   token_type: string;
@@ -71,9 +76,33 @@ export const authApi = {
   login: (data: LoginPayload) =>
     request<AuthResponse>('POST', '/auth/login', data),
 
+  google: (data: GoogleLoginPayload) =>
+    request<AuthResponse>('POST', '/auth/google', data),
+
   me: () => request<AuthResponse['user']>('GET', '/auth/me'),
 
   logout: () => request<void>('POST', '/auth/logout'),
+
+  verifyEmail: (token: string) =>
+    request<void>('POST', '/auth/verify-email', { token }),
+
+  resendVerification: (email: string) =>
+    request<void>('POST', '/auth/resend-verification', { email }),
+
+  forgotPassword: (email: string) =>
+    request<void>('POST', '/auth/forgot-password', { email }),
+
+  resetPassword: (data: { token: string; new_password: string }) =>
+    request<void>('POST', '/auth/reset-password', data),
+
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    request<void>('POST', '/auth/change-password', data),
+};
+
+// ── System API ────────────────────────────────────────────────────────────────
+
+export const systemApi = {
+  emailStatus: () => request<unknown>('GET', '/system/email-status'),
 };
 
 // ── Intelligence API ──────────────────────────────────────────────────────────

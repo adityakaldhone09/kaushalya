@@ -8,6 +8,10 @@ import { AboutPage, HomePage, HowItWorksPage } from '@/pages/public';
 import { AdminDashboardPage, DistrictsPage, PredictionsPage, ProgramImpactPage, SkillDemandPage } from '@/pages/operations';
 import { TraineeDashboardPage, TraineeGapPage, TraineeJobsPage, TraineeProfilePage, TraineeRecommendationsPage, TraineeSkillsPage, TraineeTrainingPage } from '@/pages/trainee';
 import { AuthPage, EmployerDashboardPage, EmployerJobsPage, InstituteDashboardPage, InstituteProgramsPage } from '@/pages/roles';
+import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
+import { EmailLogsPage } from '@/pages/EmailLogsPage';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AIChatWidget } from '@/components/AIChatWidget';
 
@@ -29,11 +33,15 @@ function Router() {
         <Route path="/how-it-works" component={HowItWorksPage} />
         <Route path="/login"><AuthPage mode="login" /></Route>
         <Route path="/register"><AuthPage mode="register" /></Route>
+        <Route path="/verify-email" component={VerifyEmailPage} />
+        <Route path="/forgot-password" component={ForgotPasswordPage} />
+        <Route path="/reset-password" component={ResetPasswordPage} />
         <Route path="/admin/dashboard" component={AdminDashboardPage} />
         <Route path="/admin/districts" component={DistrictsPage} />
         <Route path="/admin/skill-demand" component={SkillDemandPage} />
         <Route path="/admin/predictions" component={PredictionsPage} />
         <Route path="/admin/program-impact" component={ProgramImpactPage} />
+        <Route path="/admin/email-logs" component={EmailLogsPage} />
         <Route path="/trainee/dashboard" component={TraineeDashboardPage} />
         <Route path="/trainee/profile" component={TraineeProfilePage} />
         <Route path="/trainee/skills" component={TraineeSkillsPage} />

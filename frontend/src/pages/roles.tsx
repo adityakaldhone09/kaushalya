@@ -7,9 +7,9 @@ import { AppShell, EmptyState, ErrorState, LoadingState, PageHeader, ProgressBar
 import { useAuth } from '@/contexts/AuthContext';
 import { authApi } from '@/services/api';
 import { roleDashboard } from '@/lib/auth';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 
 const ROLE_API_MAP: Record<string, string> = {
-  government: 'GOVERNMENT_ADMIN',
   trainee: 'TRAINEE',
   employer: 'EMPLOYER',
   institute: 'TRAINING_INSTITUTE',
@@ -18,10 +18,38 @@ const ROLE_API_MAP: Record<string, string> = {
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const [, setLocation] = useLocation();
   const { login } = useAuth();
-  const [role, setRole] = useState<'government' | 'trainee' | 'employer' | 'institute'>('trainee');
+  const [role, setRole] = useState<'TRAINEE' | 'EMPLOYER' | 'TRAINING_INSTITUTE'>('TRAINEE');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const isLogin = mode === 'login';
+  const finish = (result: Awaited<ReturnType<typeof authApi.login>>) => {
+    login(result.access_token, result.user);
+    setLocation(roleDashboard(result.user.role));
+  };
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); setLoading(true); setError('');
+    const form = new FormData(event.currentTarget);
+    try {
+      if (isLogin) finish(await authApi.login({ email: String(form.get('email')), password: String(form.get('password')) }));
+      else { await authApi.register({ name: String(form.get('name')), email: String(form.get('email')), password: String(form.get('password')), role }); setLocation('/login'); }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Authentication failed'); } finally { setLoading(false); }
+  };
+  const google = async (credential: string) => {
+    setLoading(true); setError('');
+    try { finish(await authApi.google({ credential, role })); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Google sign-in failed'); } finally { setLoading(false); }
+  };
+  return <div className="noise grid min-h-[100dvh] place-items-center bg-[#e9eee8] p-5"><main className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-xl"><Link href="/" className="font-display text-lg font-bold tracking-[.14em]">KAUSHALYA</Link><p className="mt-8 text-xs font-bold uppercase tracking-wider text-primary">{isLogin ? 'Welcome back' : 'Create your account'}</p><h1 className="mt-2 font-display text-3xl font-semibold">{isLogin ? 'Sign in to continue.' : 'Start your journey.'}</h1><form onSubmit={submit} className="mt-6 space-y-4">{!isLogin && <><label className="block text-xs font-semibold">Full name<input required name="name" className="mt-2 h-11 w-full rounded-xl border border-border px-3" /></label><label className="block text-xs font-semibold">Role<select value={role} onChange={e => setRole(e.target.value as typeof role)} className="mt-2 h-11 w-full rounded-xl border border-border px-3"><option value="TRAINEE">Trainee</option><option value="EMPLOYER">Employer</option><option value="TRAINING_INSTITUTE">Training Institute</option></select></label></>}<label className="block text-xs font-semibold">Email<input required type="email" name="email" className="mt-2 h-11 w-full rounded-xl border border-border px-3" /></label><label className="block text-xs font-semibold">Password<input required type="password" name="password" placeholder="8+ characters, upper/lowercase and number" className="mt-2 h-11 w-full rounded-xl border border-border px-3" /></label>{isLogin && <Link href="/forgot-password" className="block text-right text-xs font-bold text-primary">Forgot password?</Link>}{error && <p className="rounded-lg bg-destructive/10 p-3 text-xs text-destructive">{error}</p>}<button disabled={loading} className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-60">{loading ? 'Please wait…' : isLogin ? 'Sign in' : 'Create account'}</button></form><div className="my-5 flex items-center gap-3 text-xs text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">OR</div><GoogleSignInButton onCredential={google} disabled={loading} /><p className="mt-6 text-center text-xs text-muted-foreground">{isLogin ? 'New to KAUSHALYA?' : 'Already have an account?'} <Link href={isLogin ? '/register' : '/login'} className="font-bold text-primary">{isLogin ? 'Create account' : 'Sign in'}</Link></p></main></div>;
+}
+
+export function LegacyAuthPage({ mode }: { mode: 'login' | 'register' }) {
+  const [, setLocation] = useLocation();
+  const { login } = useAuth();
+  const [role, setRole] = useState<'trainee' | 'employer' | 'institute'>('trainee');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const isLogin = mode === 'login';
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -34,25 +62,25 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     const name = String(form.get('name') || '');
 
     try {
-      let res;
       if (isLogin) {
-        res = await authApi.login({ email, password });
+        const res = await authApi.login({ email, password });
+        login(res.access_token, {
+          id: res.user.id,
+          name: res.user.name,
+          email: res.user.email,
+          role: res.user.role,
+          organization: res.user.organization,
+        });
+        setLocation(roleDashboard(res.user.role));
       } else {
-        res = await authApi.register({
+        await authApi.register({
           name,
           email,
           password,
           role: ROLE_API_MAP[role] || 'TRAINEE',
         });
+        setRegisteredEmail(email);
       }
-      login(res.access_token, {
-        id: res.user.id,
-        name: res.user.name,
-        email: res.user.email,
-        role: res.user.role,
-        organization: res.user.organization,
-      });
-      setLocation(roleDashboard(res.user.role));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
@@ -60,7 +88,36 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     }
   }
 
-  return <div className="noise grid min-h-[100dvh] bg-[#e9eee8] lg:grid-cols-[.9fr_1.1fr]"><div className="relative hidden overflow-hidden bg-[#203f43] p-10 text-[#edf0e6] lg:flex lg:flex-col lg:justify-between"><Link href="/" data-testid="link-auth-logo"><div><div className="flex items-center gap-3"><div className="grid size-9 place-items-center rounded-xl bg-accent text-accent-foreground"><span className="font-display text-lg font-bold">K</span></div><span className="font-display text-[15px] font-bold tracking-[.14em]">KAUSHALYA</span></div><div className="mt-20 max-w-md"><div className="text-[10px] font-bold uppercase tracking-[.2em] text-accent">One system, many futures</div><h1 className="mt-5 font-display text-6xl font-semibold leading-[.93] tracking-[-.07em]">The next step is clearer when the signal is shared.</h1><p className="mt-7 text-sm leading-6 text-[#afc5bc]">Enter a workspace designed around your role—and connected to the workforce story beyond it.</p></div></div><div className="flex items-center justify-between text-xs text-[#afc5bc]"><span>Public workforce intelligence</span><span>KAUSHALYA / 01</span></div></Link></div><div className="flex items-center justify-center p-5 sm:p-10"><div className="w-full max-w-[460px]"><div className="mb-8 lg:hidden"><Link href="/" data-testid="mobile-auth-logo" className="inline-block"><div className="flex items-center gap-3"><div className="grid size-9 place-items-center rounded-xl bg-accent text-accent-foreground"><span className="font-display text-lg font-bold">K</span></div><span className="font-display text-[15px] font-bold tracking-[.14em]">KAUSHALYA</span></div></Link></div><div className="mb-8"><div className="text-[10px] font-bold uppercase tracking-[.2em] text-primary">{isLogin ? 'Welcome back' : 'Create your workspace'}</div><h2 className="mt-3 font-display text-4xl font-semibold tracking-[-.06em]">{isLogin ? 'Continue the work.' : 'Start with your role.'}</h2><p className="mt-3 text-sm text-muted-foreground">{isLogin ? 'Sign in with your demo account.' : 'A focused entry point for every part of the workforce system.'}</p></div>{!isLogin && <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">{([['government', Landmark, 'Government'], ['trainee', UserRound, 'Trainee'], ['employer', BriefcaseBusiness, 'Employer'], ['institute', Building2, 'Institute']] as const).map(([value, Icon, label]) => <button key={value} type="button" onClick={() => setRole(value)} data-testid={`button-role-${value}`} className={cx("rounded-xl border p-3 text-center transition-colors", role === value ? "border-primary bg-secondary text-primary" : "border-border bg-card text-muted-foreground hover:bg-muted")}><Icon className="mx-auto mb-2 size-4" /><span className="text-[10px] font-semibold">{label}</span></button>)}</div>}<form onSubmit={submit} className="space-y-4" data-testid={`form-${mode}`}>{!isLogin && <label className="block text-xs font-semibold">Full name<input required name="name" placeholder="Your full name" data-testid="input-auth-name" className="mt-2 h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm font-normal outline-none focus:ring-2 focus:ring-ring" /></label>}<label className="block text-xs font-semibold">Work email<input required name="email" type="email" placeholder="you@organisation.gov" data-testid="input-auth-email" className="mt-2 h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm font-normal outline-none focus:ring-2 focus:ring-ring" /></label><label className="block text-xs font-semibold">Password<div className="relative mt-2"><input required name="password" type={showPassword ? 'text' : 'password'} placeholder="At least 8 characters" data-testid="input-auth-password" className="h-11 w-full rounded-xl border border-border bg-card px-3.5 pr-11 text-sm font-normal outline-none focus:ring-2 focus:ring-ring" /><button type="button" onClick={() => setShowPassword(!showPassword)} data-testid="button-toggle-password" className="absolute right-3 top-3 text-muted-foreground">{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div></label>{error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive" data-testid="error-auth">{error}</div>}<button disabled={loading} data-testid={`button-submit-${mode}`} className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/10 hover:bg-primary/90 disabled:opacity-60">{loading ? 'Please wait…' : isLogin ? 'Enter workspace' : 'Create workspace'} {!loading && <ArrowRight className="ml-1.5 inline size-4" />}</button></form><div className="mt-6 flex items-start gap-2 rounded-xl border border-border bg-card/60 p-3 text-[11px] leading-4 text-muted-foreground"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" /><span>Demo accounts: <code className="text-primary">trainee@kaushalya.demo</code> / <code className="text-primary">admin@kaushalya.demo</code> · Password: <code className="text-primary">Demo@1234</code></span></div><p className="mt-6 text-center text-xs text-muted-foreground">{isLogin ? "New to KAUSHALYA?" : 'Already have access?'} <Link href={isLogin ? '/register' : '/login'} data-testid="link-auth-switch" className="font-bold text-primary">{isLogin ? 'Create a workspace' : 'Sign in'}</Link></p></div></div></div>;
+  async function googleSignIn(credential: string) {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await authApi.google({ credential, role: ROLE_API_MAP[role] as 'TRAINEE' | 'EMPLOYER' | 'TRAINING_INSTITUTE' });
+      login(res.access_token, res.user);
+      setLocation(roleDashboard(res.user.role));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (registeredEmail) {
+    return (
+      <div className="noise grid min-h-[100dvh] bg-[#e9eee8] place-items-center">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xl">
+          <ShieldCheck className="mx-auto size-12 text-primary mb-4" />
+          <h2 className="text-2xl font-semibold mb-2">Verify your email</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            We've sent a verification link to <b>{registeredEmail}</b>. Please check your inbox to complete your registration.
+          </p>
+          <button onClick={() => setLocation('/login')} className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground w-full">Go to Login</button>
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="noise grid min-h-[100dvh] bg-[#e9eee8] lg:grid-cols-[.9fr_1.1fr]"><div className="relative hidden overflow-hidden bg-[#203f43] p-10 text-[#edf0e6] lg:flex lg:flex-col lg:justify-between"><Link href="/" data-testid="link-auth-logo"><div><div className="flex items-center gap-3"><div className="grid size-9 place-items-center rounded-xl bg-accent text-accent-foreground"><span className="font-display text-lg font-bold">K</span></div><span className="font-display text-[15px] font-bold tracking-[.14em]">KAUSHALYA</span></div><div className="mt-20 max-w-md"><div className="text-[10px] font-bold uppercase tracking-[.2em] text-accent">One system, many futures</div><h1 className="mt-5 font-display text-6xl font-semibold leading-[.93] tracking-[-.07em]">The next step is clearer when the signal is shared.</h1><p className="mt-7 text-sm leading-6 text-[#afc5bc]">Enter a workspace designed around your role—and connected to the workforce story beyond it.</p></div></div><div className="flex items-center justify-between text-xs text-[#afc5bc]"><span>Public workforce intelligence</span><span>KAUSHALYA / 01</span></div></Link></div><div className="flex items-center justify-center p-5 sm:p-10"><div className="w-full max-w-[460px]"><div className="mb-8 lg:hidden"><Link href="/" data-testid="mobile-auth-logo" className="inline-block"><div className="flex items-center gap-3"><div className="grid size-9 place-items-center rounded-xl bg-accent text-accent-foreground"><span className="font-display text-lg font-bold">K</span></div><span className="font-display text-[15px] font-bold tracking-[.14em]">KAUSHALYA</span></div></Link></div><div className="mb-8"><div className="text-[10px] font-bold uppercase tracking-[.2em] text-primary">{isLogin ? 'Welcome back' : 'Create your workspace'}</div><h2 className="mt-3 font-display text-4xl font-semibold tracking-[-.06em]">{isLogin ? 'Continue the work.' : 'Start with your role.'}</h2><p className="mt-3 text-sm text-muted-foreground">{isLogin ? 'Sign in with your demo account.' : 'A focused entry point for every part of the workforce system.'}</p></div>{!isLogin && <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">{([['government', Landmark, 'Government'], ['trainee', UserRound, 'Trainee'], ['employer', BriefcaseBusiness, 'Employer'], ['institute', Building2, 'Institute']] as const).map(([value, Icon, label]) => <button key={value} type="button" onClick={() => setRole(value)} data-testid={`button-role-${value}`} className={cx("rounded-xl border p-3 text-center transition-colors", role === value ? "border-primary bg-secondary text-primary" : "border-border bg-card text-muted-foreground hover:bg-muted")}><Icon className="mx-auto mb-2 size-4" /><span className="text-[10px] font-semibold">{label}</span></button>)}</div>}<form onSubmit={submit} className="space-y-4" data-testid={`form-${mode}`}>{!isLogin && <label className="block text-xs font-semibold">Full name<input required name="name" placeholder="Your full name" data-testid="input-auth-name" className="mt-2 h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm font-normal outline-none focus:ring-2 focus:ring-ring" /></label>}<label className="block text-xs font-semibold">Work email<input required name="email" type="email" placeholder="you@organisation.gov" data-testid="input-auth-email" className="mt-2 h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm font-normal outline-none focus:ring-2 focus:ring-ring" /></label><label className="block text-xs font-semibold">Password<div className="relative mt-2"><input required name="password" type={showPassword ? 'text' : 'password'} placeholder="At least 8 characters" data-testid="input-auth-password" className="h-11 w-full rounded-xl border border-border bg-card px-3.5 pr-11 text-sm font-normal outline-none focus:ring-2 focus:ring-ring" /><button type="button" onClick={() => setShowPassword(!showPassword)} data-testid="button-toggle-password" className="absolute right-3 top-3 text-muted-foreground">{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div></label>{isLogin && <div className="text-right -mt-2"><Link href="/forgot-password" className="text-[11px] font-bold text-primary hover:underline">Forgot password?</Link></div>}{error && <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive" data-testid="error-auth">{error}</div>}<button disabled={loading} data-testid={`button-submit-${mode}`} className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/10 hover:bg-primary/90 disabled:opacity-60">{loading ? 'Please wait…' : isLogin ? 'Enter workspace' : 'Create workspace'} {!loading && <ArrowRight className="ml-1.5 inline size-4" />}</button></form><div className="mt-6 flex items-start gap-2 rounded-xl border border-border bg-card/60 p-3 text-[11px] leading-4 text-muted-foreground"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" /><span>Demo accounts: <code className="text-primary">trainee@kaushalya.demo</code> / <code className="text-primary">admin@kaushalya.demo</code> · Password: <code className="text-primary">Demo@1234</code></span></div><p className="mt-6 text-center text-xs text-muted-foreground">{isLogin ? "New to KAUSHALYA?" : 'Already have access?'} <Link href={isLogin ? '/register' : '/login'} data-testid="link-auth-switch" className="font-bold text-primary">{isLogin ? 'Create a workspace' : 'Sign in'}</Link></p></div></div></div>;
 }
 
 function EmployerFrame({ children }: { children: React.ReactNode }) { return <AppShell role="employer"><div className="mx-auto max-w-[1300px] px-5 py-7 md:px-8 lg:px-10">{children}</div></AppShell>; }
