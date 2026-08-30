@@ -1,6 +1,6 @@
 from __future__ import annotations
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId
 
@@ -9,6 +9,7 @@ from app.database.connection import get_db
 from app.schemas.employment import EmploymentOutcomeCreate, EmploymentOutcomeUpdate
 from app.utils.serializer import serialize_doc, serialize_docs
 from app.models.base import utcnow
+from app.services.email_service import email_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/employment", tags=["Employment"])
@@ -28,6 +29,7 @@ async def get_my_outcomes(
 @router.post("", status_code=201)
 async def create_outcome(
     body: EmploymentOutcomeCreate,
+    background_tasks: BackgroundTasks,
     user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
@@ -54,6 +56,9 @@ async def create_outcome(
                 "updated_at": now,
             }},
         )
+    email_service.send_employment_outcome_email(background_tasks, user.get("email"), user.get("name"),
+        {"Company": body.employer_name, "Role": body.job_title, "Salary": body.salary,
+         "Employment Date": body.employment_date}, user_id)
     return serialize_doc(doc)
 
 

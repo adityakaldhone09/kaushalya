@@ -1,11 +1,12 @@
 from __future__ import annotations
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId
 
 from app.auth.dependencies import get_current_user
 from app.database.connection import get_db
+from app.services.email_service import email_service
 from app.schemas.training import (
     TrainingProgramCreate, TrainingProgramUpdate,
     EnrollmentCreate, EnrollmentUpdate,
@@ -17,10 +18,8 @@ from app.models.base import utcnow
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Training"])
 
-
 def _program_doc(doc: dict) -> dict:
     s = serialize_doc(doc) or {}
-    # Normalise to camelCase-friendly keys consumed by the frontend
     return {
         "id": s.get("id", ""),
         "name": s.get("name", ""),
@@ -40,9 +39,6 @@ def _program_doc(doc: dict) -> dict:
         "status": s.get("status", "active"),
     }
 
-
-# ── Training Programs ─────────────────────────────────────────────────────────
-
 @router.get("/training-programs")
 async def list_programs(
     industry: str = Query(default=""),
@@ -58,14 +54,12 @@ async def list_programs(
     docs = await cursor.to_list(length=50)
     return [_program_doc(d) for d in docs]
 
-
 @router.get("/training-programs/{program_id}")
 async def get_program(program_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
     doc = await db.training_programs.find_one({"_id": ObjectId(program_id)})
     if not doc:
         raise HTTPException(status_code=404, detail="Program not found")
     return _program_doc(doc)
-
 
 @router.post("/training-programs", status_code=201)
 async def create_program(
@@ -89,7 +83,6 @@ async def create_program(
     doc["_id"] = result.inserted_id
     return _program_doc(doc)
 
-
 @router.put("/training-programs/{program_id}")
 async def update_program(
     program_id: str,
@@ -106,7 +99,6 @@ async def update_program(
         raise HTTPException(status_code=404, detail="Program not found")
     return _program_doc(result)
 
-
 @router.delete("/training-programs/{program_id}", status_code=204)
 async def delete_program(
     program_id: str,
@@ -117,12 +109,10 @@ async def delete_program(
         raise HTTPException(status_code=403, detail="Admin required")
     await db.training_programs.delete_one({"_id": ObjectId(program_id)})
 
-
-# ── Enrollments ───────────────────────────────────────────────────────────────
-
 @router.post("/enrollments", status_code=201)
 async def enroll(
     body: EnrollmentCreate,
+    background_tasks: BackgroundTasks,
     user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
@@ -146,12 +136,14 @@ async def enroll(
     }
     result = await db.enrollments.insert_one(doc)
     doc["_id"] = result.inserted_id
-    # Increment enrolled count
     await db.training_programs.update_one(
         {"_id": ObjectId(body.program_id)}, {"$inc": {"enrolled": 1}}
     )
+    
+    email_service.send_training_enrollment_email(background_tasks, user.get("email"), user.get("name"),
+        {"Program": program.get("name"), "Institute": program.get("institute"), "Duration": program.get("duration")}, user_id)
+    
     return serialize_doc(doc)
-
 
 @router.get("/enrollments/me")
 async def my_enrollments(
@@ -163,11 +155,11 @@ async def my_enrollments(
     docs = await cursor.to_list(length=50)
     return serialize_docs(docs)
 
-
 @router.put("/enrollments/{enrollment_id}")
 async def update_enrollment(
     enrollment_id: str,
     body: EnrollmentUpdate,
+    background_tasks: BackgroundTasks,
     user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
@@ -179,10 +171,14 @@ async def update_enrollment(
     )
     if not result:
         raise HTTPException(status_code=404, detail="Enrollment not found")
+        
+    trainee = await db.users.find_one({"_id": ObjectId(result["trainee_id"])})
+    if trainee:
+        if body.status == "COMPLETED":
+            email_service.send_training_completion_email(background_tasks, trainee.get("email"), trainee.get("name"),
+                {"Program": result.get("program_name"), "Skills acquired": result.get("skills", [])}, str(trainee["_id"]))
+        
     return serialize_doc(result)
-
-
-# ── Certifications ────────────────────────────────────────────────────────────
 
 @router.post("/certifications", status_code=201)
 async def add_certification(
@@ -200,7 +196,6 @@ async def add_certification(
     result = await db.certifications.insert_one(doc)
     doc["_id"] = result.inserted_id
     return serialize_doc(doc)
-
 
 @router.get("/certifications/me")
 async def my_certifications(
