@@ -14,6 +14,8 @@ from app.routes.employment import router as employment_router
 from app.routes.intelligence import router as intelligence_router
 from app.routes.analytics import router as analytics_router
 from app.routes.ai import router as ai_router
+from app.routes.system import router as system_router
+from app.routes.users import router as users_router
 
 api_router = APIRouter()
 
@@ -54,3 +56,7 @@ api_router.include_router(analytics_router)
 
 # AI features (/ai/*)
 api_router.include_router(ai_router)
+
+# System routes (/system/*)
+api_router.include_router(system_router)
+api_router.include_router(users_router)
