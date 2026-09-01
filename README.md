@@ -451,6 +451,106 @@ Full interactive docs at `http://localhost:8000/docs`
 
 ---
 
+## Datasets and Data Import
+
+KAUSHALYA comes with curated datasets that power the skill demand analysis, job matching, and workforce intelligence features.
+
+### Available Datasets
+
+| Dataset | Location | Size | Contents | Purpose |
+|---|---|---|---|---|
+| **Jobs** | `all_job_post.csv` | 4.7 MB | 1,167 job postings with skills, category, company data | Job search, matching, skill demand |
+| **Professional Profiles** | `Dataset_1/india_professional_skills_intelligence.csv` | ~30 MB | 75,000+ professional profiles with skills, salary, industry, location, employability score | Workforce intelligence, skills taxonomy, salary benchmarking |
+| **Assessment Q&A** | `Dataset_2/S08_question_answer_pairs.txt`, etc. | ~400 KB | Historical/factual Q&A pairs (Abraham Lincoln, etc.) | Optional enrichment for general knowledge |
+| **Skills Taxonomy** | `Dataset_3/skills.csv` | ~3 MB | 75,000+ unique skills from professional profiles | Skill taxonomy, normalization, autocomplete |
+
+### Dataset Inspection & Validation
+
+Before importing, inspect the datasets:
+
+```bash
+cd backend
+
+# Validate dataset files exist
+python3 << 'EOF'
+from pathlib import Path
+for dataset in [
+    Path("../Dataset_1/india_professional_skills_intelligence.csv"),
+    Path("../Dataset_3/skills.csv"),
+    Path("../all_job_post.csv"),
+]:
+    print(f"{'✓' if dataset.exists() else '✗'} {dataset.name} ({dataset.stat().st_size / 1_000_000:.1f} MB)")
+EOF
+```
+
+### Importing Datasets
+
+**Step 1: Import All Data**
+
+```bash
+# From backend/ directory
+python3 scripts/import_datasets.py --dataset=all
+
+# OR import selectively:
+python3 scripts/import_datasets.py --dataset=jobs        # Only jobs
+python3 scripts/import_datasets.py --dataset=skills      # Only skills
+python3 scripts/import_datasets.py --dataset=profiles    # Only professional profiles
+
+# Mode options:
+python3 scripts/import_datasets.py --mode=upsert         # Default: update existing
+python3 scripts/import_datasets.py --mode=replace        # Destructive: replace all
+```
+
+**Step 2: Seed Demo Assessments**
+
+```bash
+python3 scripts/seed_assessments.py
+```
+
+This creates 4 demo assessments with ~15 questions each, mapped to common skills:
+- Python Fundamentals (5 questions)
+- JavaScript Basics (3 questions)
+- Data Structures (2 questions)
+- React Fundamentals (2 questions)
+
+**Step 3: Verify Import**
+
+```bash
+# Check backend MongoDB health
+curl -s http://localhost:8000/api/healthz | jq
+
+# Expected response:
+# {
+#   "status": "healthy",
+#   "database": "connected",
+#   "collections": {
+#     "jobs": 1167,
+#     "skills": 75000+,
+#     "skill_assessments": 4,
+#     "professional_profiles": 75000+
+#   }
+# }
+```
+
+### Dataset Provenance and Quality
+
+All imported records include:
+- `source_dataset` — where the record came from
+- `imported_at` — timestamp of import
+- `dataset_version` — version number for tracking
+
+**Skills Normalization:**
+- Duplicate/similar skills are deduplicated
+- Skill names are normalized (e.g., "JS", "JavaScript" → canonical "JavaScript")
+- Skills are tagged with `category` and `demand_score` (calculated from job occurrences)
+
+**Job Data:**
+- Job titles are normalized (e.g., "React JS Developer", "React Developer" → aligned)
+- Skills are extracted and normalized from `job_skill_set` field
+- Salary ranges (where available) are standardized to annual LPA (Lakh Per Annum)
+
+---
+
 ## SIH Problem Statement Mapping
 
 **Problem Statement ID: SIH26135**
