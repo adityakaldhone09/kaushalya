@@ -7,6 +7,7 @@ import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { AboutPage, HomePage, HowItWorksPage } from '@/pages/public';
 import { AdminDashboardPage, DistrictsPage, PredictionsPage, ProgramImpactPage, SkillDemandPage } from '@/pages/operations';
 import { TraineeDashboardPage, TraineeGapPage, TraineeJobsPage, TraineeProfilePage, TraineeRecommendationsPage, TraineeSkillsPage, TraineeTrainingPage } from '@/pages/trainee';
+import { TraineeAssessmentListPage, TraineeAssessmentHistoryPage, TraineeAssessmentResultPage } from '@/pages/trainee-assessment';
 import { AuthPage, EmployerDashboardPage, EmployerJobsPage, InstituteDashboardPage, InstituteProgramsPage } from '@/pages/roles';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
@@ -46,6 +47,9 @@ function Router() {
         <Route path="/trainee/profile" component={TraineeProfilePage} />
         <Route path="/trainee/skills" component={TraineeSkillsPage} />
         <Route path="/trainee/skill-gap" component={TraineeGapPage} />
+        <Route path="/trainee/assessment" component={TraineeAssessmentListPage} />
+        <Route path="/trainee/assessment/history" component={TraineeAssessmentHistoryPage} />
+        <Route path="/trainee/assessment/result/:attempt_id" component={TraineeAssessmentResultPage} />
         <Route path="/trainee/jobs" component={TraineeJobsPage} />
         <Route path="/trainee/training" component={TraineeTrainingPage} />
         <Route path="/trainee/recommendations" component={TraineeRecommendationsPage} />
