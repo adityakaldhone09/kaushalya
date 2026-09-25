@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block content %}<h2>Employment outcome recorded</h2><p>Congratulations, {{ name }}. Your employment information has been recorded.</p>{% for key, value in details.items() %}<p><strong>{{ key }}:</strong> {{ value }}</p>{% endfor %}{% endblock %}
