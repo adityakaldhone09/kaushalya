@@ -1,0 +1,686 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: KAUSHALYA workforce intelligence API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: dashboards
+  - name: intelligence
+  - name: trainees
+  - name: jobs
+  - name: training
+  - name: skills
+  - name: assistant
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /dashboard/government:
+    get:
+      operationId: getGovernmentDashboard
+      tags: [dashboards]
+      summary: Get government intelligence dashboard
+      parameters:
+        - $ref: "#/components/parameters/DistrictParam"
+      responses:
+        "200":
+          description: Government dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GovernmentDashboard"
+  /dashboard/trainee/{traineeId}:
+    get:
+      operationId: getTraineeDashboard
+      tags: [dashboards]
+      summary: Get trainee dashboard
+      parameters:
+        - $ref: "#/components/parameters/TraineeIdParam"
+      responses:
+        "200":
+          description: Trainee dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TraineeDashboard"
+  /districts:
+    get:
+      operationId: listDistricts
+      tags: [intelligence]
+      summary: List district intelligence snapshots
+      responses:
+        "200":
+          description: Districts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DistrictIntelligence"
+  /districts/{district}:
+    get:
+      operationId: getDistrictIntelligence
+      tags: [intelligence]
+      summary: Get one district intelligence snapshot
+      parameters:
+        - $ref: "#/components/parameters/DistrictPathParam"
+      responses:
+        "200":
+          description: District intelligence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistrictIntelligence"
+  /skill-demand:
+    get:
+      operationId: listSkillDemand
+      tags: [intelligence]
+      summary: List current skill demand
+      parameters:
+        - name: industry
+          in: query
+          schema:
+            type: string
+        - name: district
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Skill demand records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SkillDemand"
+  /forecast:
+    get:
+      operationId: getSkillForecast
+      tags: [intelligence]
+      summary: Get future skill demand forecast
+      responses:
+        "200":
+          description: Forecast records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Forecast"
+  /trainees/{traineeId}:
+    get:
+      operationId: getTrainee
+      tags: [trainees]
+      summary: Get trainee profile
+      parameters:
+        - $ref: "#/components/parameters/TraineeIdParam"
+      responses:
+        "200":
+          description: Trainee profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trainee"
+    patch:
+      operationId: updateTrainee
+      tags: [trainees]
+      summary: Update trainee profile
+      parameters:
+        - $ref: "#/components/parameters/TraineeIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TraineeUpdate"
+      responses:
+        "200":
+          description: Updated trainee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trainee"
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List recommended and open jobs
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      summary: Create a job posting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobInput"
+      responses:
+        "201":
+          description: Created job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+  /jobs/{jobId}/apply:
+    post:
+      operationId: applyToJob
+      tags: [jobs]
+      summary: Apply to a job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobApplicationInput"
+      responses:
+        "201":
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobApplication"
+  /job-matches/{traineeId}:
+    get:
+      operationId: getJobMatches
+      tags: [jobs]
+      summary: Get ranked job matches for a trainee
+      parameters:
+        - $ref: "#/components/parameters/TraineeIdParam"
+      responses:
+        "200":
+          description: Job matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JobMatch"
+  /skills:
+    get:
+      operationId: listSkills
+      tags: [skills]
+      summary: List skills in the taxonomy
+      responses:
+        "200":
+          description: Skills
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Skill"
+  /training-programs:
+    get:
+      operationId: listTrainingPrograms
+      tags: [training]
+      summary: List training programs
+      responses:
+        "200":
+          description: Training programs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainingProgram"
+    post:
+      operationId: createTrainingProgram
+      tags: [training]
+      summary: Create a training program
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingProgramInput"
+      responses:
+        "201":
+          description: Created training program
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingProgram"
+  /recommendations/{traineeId}:
+    get:
+      operationId: getTraineeRecommendations
+      tags: [trainees]
+      summary: Get personalized recommendations
+      parameters:
+        - $ref: "#/components/parameters/TraineeIdParam"
+      responses:
+        "200":
+          description: Recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recommendation"
+  /assistant/career-advice:
+    post:
+      operationId: getCareerAdvice
+      tags: [assistant]
+      summary: Ask the career assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CareerAdviceInput"
+      responses:
+        "200":
+          description: Assistant response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerAdvice"
+components:
+  parameters:
+    DistrictParam:
+      name: district
+      in: query
+      required: false
+      schema:
+        type: string
+        default: All districts
+    DistrictPathParam:
+      name: district
+      in: path
+      required: true
+      schema:
+        type: string
+    TraineeIdParam:
+      name: traineeId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+    Kpi:
+      type: object
+      properties:
+        label: { type: string }
+        value: { type: string }
+        change: { type: string }
+        trend: { type: string, enum: [up, down, neutral] }
+        detail: { type: string }
+      required: [label, value, change, trend, detail]
+    EmploymentTrend:
+      type: object
+      properties:
+        month: { type: string }
+        employed: { type: number }
+        placements: { type: number }
+      required: [month, employed, placements]
+    GovernmentDashboard:
+      type: object
+      properties:
+        scope: { type: string }
+        updatedAt: { type: string }
+        kpis:
+          type: array
+          items: { $ref: "#/components/schemas/Kpi" }
+        employmentTrend:
+          type: array
+          items: { $ref: "#/components/schemas/EmploymentTrend" }
+        districtEmployment:
+          type: array
+          items: { $ref: "#/components/schemas/DistrictEmployment" }
+        topGaps:
+          type: array
+          items: { $ref: "#/components/schemas/SkillGap" }
+        insights:
+          type: array
+          items: { $ref: "#/components/schemas/Insight" }
+        programPerformance:
+          type: array
+          items: { $ref: "#/components/schemas/ProgramPerformance" }
+      required: [scope, updatedAt, kpis, employmentTrend, districtEmployment, topGaps, insights, programPerformance]
+    DistrictEmployment:
+      type: object
+      properties:
+        district: { type: string }
+        employed: { type: number }
+        trainees: { type: number }
+        placementRate: { type: number }
+      required: [district, employed, trainees, placementRate]
+    SkillGap:
+      type: object
+      properties:
+        skill: { type: string }
+        category: { type: string }
+        gap: { type: number }
+        demand: { type: number }
+        status: { type: string, enum: [critical, high, moderate, healthy] }
+      required: [skill, category, gap, demand, status]
+    Insight:
+      type: object
+      properties:
+        title: { type: string }
+        district: { type: string }
+        problem: { type: string }
+        evidence: { type: string }
+        prediction: { type: string }
+        recommendation: { type: string }
+        impact: { type: string }
+        tone: { type: string, enum: [amber, blue, green, red] }
+      required: [title, district, problem, evidence, prediction, recommendation, impact, tone]
+    ProgramPerformance:
+      type: object
+      properties:
+        name: { type: string }
+        institute: { type: string }
+        enrolled: { type: number }
+        placementRate: { type: number }
+        impactScore: { type: number }
+        salary: { type: string }
+        trend: { type: string }
+      required: [name, institute, enrolled, placementRate, impactScore, salary, trend]
+    DistrictIntelligence:
+      type: object
+      properties:
+        district: { type: string }
+        region: { type: string }
+        status: { type: string, enum: [green, yellow, orange, red] }
+        trainees: { type: number }
+        employed: { type: number }
+        placementRate: { type: number }
+        averageSalary: { type: string }
+        skillSupply: { type: string }
+        skillDemand: { type: string }
+        skillGap: { type: string }
+        topDemand: { type: string }
+        topAvailable: { type: string }
+        futureDemand: { type: string }
+        growthRate: { type: number }
+        recommendation: { type: string }
+        coordinates:
+          type: object
+          properties:
+            x: { type: number }
+            y: { type: number }
+          required: [x, y]
+      required: [district, region, status, trainees, employed, placementRate, averageSalary, skillSupply, skillDemand, skillGap, topDemand, topAvailable, futureDemand, growthRate, recommendation, coordinates]
+    SkillDemand:
+      type: object
+      properties:
+        skill: { type: string }
+        category: { type: string }
+        currentDemand: { type: number }
+        growthRate: { type: number }
+        jobCount: { type: number }
+        supply: { type: number }
+        status: { type: string, enum: [rapidly-growing, growing, stable, declining] }
+        region: { type: string }
+      required: [skill, category, currentDemand, growthRate, jobCount, supply, status, region]
+    Forecast:
+      type: object
+      properties:
+        skill: { type: string }
+        currentDemand: { type: number }
+        predictedDemand: { type: number }
+        growthRate: { type: number }
+        confidence: { type: number }
+        trend: { type: string }
+        rationale: { type: string }
+      required: [skill, currentDemand, predictedDemand, growthRate, confidence, trend, rationale]
+    Trainee:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        district: { type: string }
+        state: { type: string }
+        education: { type: string }
+        specialization: { type: string }
+        employmentStatus: { type: string }
+        company: { type: [string, "null"] }
+        jobRole: { type: [string, "null"] }
+        salary: { type: [string, "null"] }
+        experience: { type: string }
+        profileCompletion: { type: number }
+        employabilityScore: { type: number }
+        scoreClass: { type: string }
+        skills:
+          type: array
+          items: { $ref: "#/components/schemas/TraineeSkill" }
+      required: [id, name, email, phone, district, state, education, specialization, employmentStatus, company, jobRole, salary, experience, profileCompletion, employabilityScore, scoreClass, skills]
+    TraineeSkill:
+      type: object
+      properties:
+        skill: { type: string }
+        category: { type: string }
+        proficiency: { type: number }
+        level: { type: string }
+        verified: { type: boolean }
+        assessmentScore: { type: number }
+      required: [skill, category, proficiency, level, verified, assessmentScore]
+    TraineeDashboard:
+      type: object
+      properties:
+        trainee: { $ref: "#/components/schemas/Trainee" }
+        totalSkills: { type: number }
+        verifiedSkills: { type: number }
+        skillGapScore: { type: number }
+        recommendedJobs: { type: number }
+        recommendedTraining: { type: number }
+        careerPaths:
+          type: array
+          items: { type: string }
+        journey:
+          type: array
+          items: { $ref: "#/components/schemas/JourneyStep" }
+        recentActivity:
+          type: array
+          items: { $ref: "#/components/schemas/Activity" }
+      required: [trainee, totalSkills, verifiedSkills, skillGapScore, recommendedJobs, recommendedTraining, careerPaths, journey, recentActivity]
+    JourneyStep:
+      type: object
+      properties:
+        label: { type: string }
+        detail: { type: string }
+        status: { type: string, enum: [complete, current, upcoming] }
+        date: { type: [string, "null"] }
+      required: [label, detail, status, date]
+    Activity:
+      type: object
+      properties:
+        title: { type: string }
+        detail: { type: string }
+        time: { type: string }
+        tone: { type: string, enum: [blue, green, amber, purple] }
+      required: [title, detail, time, tone]
+    Job:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        company: { type: string }
+        industry: { type: string }
+        location: { type: string }
+        jobType: { type: string }
+        experience: { type: string }
+        salary: { type: string }
+        requiredSkills:
+          type: array
+          items: { type: string }
+        posted: { type: string }
+        deadline: { type: string }
+        applicants: { type: number }
+        match: { type: number }
+      required: [id, title, company, industry, location, jobType, experience, salary, requiredSkills, posted, deadline, applicants, match]
+    JobMatch:
+      allOf:
+        - $ref: "#/components/schemas/Job"
+        - type: object
+          properties:
+            match: { type: number }
+            matchingSkills:
+              type: array
+              items: { type: string }
+            missingSkills:
+              type: array
+              items: { type: string }
+            matchReason: { type: string }
+          required: [match, matchingSkills, missingSkills, matchReason]
+    Skill:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        category: { type: string }
+        description: { type: string }
+        demandScore: { type: number }
+        growthRate: { type: number }
+        industryRelevance: { type: string }
+      required: [id, name, category, description, demandScore, growthRate, industryRelevance]
+    TrainingProgram:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        institute: { type: string }
+        description: { type: string }
+        duration: { type: string }
+        mode: { type: string }
+        location: { type: string }
+        industry: { type: string }
+        skills:
+          type: array
+          items: { type: string }
+        capacity: { type: number }
+        enrolled: { type: number }
+        completionRate: { type: number }
+        placementRate: { type: number }
+        impactScore: { type: number }
+        salary: { type: string }
+      required: [id, name, institute, description, duration, mode, location, industry, skills, capacity, enrolled, completionRate, placementRate, impactScore, salary]
+    Recommendation:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [skill, job, training, district] }
+        title: { type: string }
+        description: { type: string }
+        action: { type: string }
+        priority: { type: string, enum: [high, medium, low] }
+      required: [id, type, title, description, action, priority]
+    TraineeUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        phone: { type: string }
+        district: { type: string }
+        education: { type: string }
+        specialization: { type: string }
+        targetCareer: { type: string }
+    JobInput:
+      type: object
+      required: [title, company, industry, location, jobType, experience, salary, requiredSkills, deadline]
+      properties:
+        title: { type: string }
+        company: { type: string }
+        industry: { type: string }
+        location: { type: string }
+        jobType: { type: string }
+        experience: { type: string }
+        salary: { type: string }
+        requiredSkills:
+          type: array
+          items: { type: string }
+        deadline: { type: string }
+    JobApplicationInput:
+      type: object
+      required: [traineeId]
+      properties:
+        traineeId: { type: string }
+        note: { type: string }
+    JobApplication:
+      type: object
+      properties:
+        id: { type: string }
+        jobId: { type: string }
+        traineeId: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+      required: [id, jobId, traineeId, status, createdAt]
+    TrainingProgramInput:
+      type: object
+      required: [name, institute, description, duration, mode, location, industry, skills, capacity]
+      properties:
+        name: { type: string }
+        institute: { type: string }
+        description: { type: string }
+        duration: { type: string }
+        mode: { type: string }
+        location: { type: string }
+        industry: { type: string }
+        skills:
+          type: array
+          items: { type: string }
+        capacity: { type: number }
+    CareerAdviceInput:
+      type: object
+      required: [traineeId, question]
+      properties:
+        traineeId: { type: string }
+        question: { type: string }
+    CareerAdvice:
+      type: object
+      properties:
+        answer: { type: string }
+        sources:
+          type: array
+          items: { type: string }
+        nextSteps:
+          type: array
+          items: { type: string }
+      required: [answer, sources, nextSteps]

@@ -1,0 +1,50 @@
+# Environment variable files — never commit real secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Node
+node_modules/
+**/node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+**/dist/
+.vite/
+**/.vite/
+
+# Local/generated junk
+.kilo/
+**/.kilo/
+.DS_Store
+**/.DS_Store
+Thumbs.db
+**/.replit-artifact/
+**/*.tsbuildinfo
+**/__pycache__/
+**/.pytest_cache/
+**/.cache/
+
+# OS
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Python (backend)
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+
+# MongoDB local data
+mongodb/data/
+mongodb/logs/
+~/mongodb/
+
+# Logs
+*.log
